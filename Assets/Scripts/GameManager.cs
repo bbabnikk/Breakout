@@ -151,6 +151,26 @@ public class GameManager : MonoBehaviour
             ball = FindObjectOfType<Ball>();
             paddle = FindObjectOfType<Paddle>();
             bricks = FindObjectsOfType<Brick>();
+            CancelInvoke(nameof(enableBrickColliders));
+            foreach (Brick b in bricks)
+            {
+                Collider2D collider = b.GetComponent<Collider2D>();
+
+                collider.enabled = false;
+                Vector2 targetPos = b.transform.position;
+                Vector2 randomPos = new Vector2(Random.Range(-100, 100), Random.Range(-100, 100));
+                b.transform.position = randomPos;
+                iTween.MoveTo(b.gameObject, targetPos, Random.Range(0.5f, 2f));
+            }
+            Invoke(nameof(enableBrickColliders), 3);
+        }
+    }
+    private void enableBrickColliders()
+    {
+        foreach(Brick b in bricks)
+        {
+            Collider2D collider = b.GetComponent<Collider2D>();
+            collider.enabled = true;
         }
     }
 

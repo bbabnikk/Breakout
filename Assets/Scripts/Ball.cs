@@ -41,7 +41,7 @@ public class Ball : MonoBehaviour
     private void launchBall()
     {
         //gives an initial direction speed will be fixed in FixedUpdate
-        Vector2 movement = new Vector2(Random.Range(-2f, 2f), -1);
+        Vector2 movement = new Vector2(Random.Range(-1f, 1f), -1);
         rb.AddForce(movement);
     }
 
