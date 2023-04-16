@@ -6,6 +6,7 @@ public class GameManager : MonoBehaviour
     private Ball ball;
     private Paddle paddle;
     private Brick[] bricks;
+    private AudioSource levelCompleteSound;
     private int score;
     private int lives;
     private int level;
@@ -14,6 +15,7 @@ public class GameManager : MonoBehaviour
     {
         DontDestroyOnLoad(this.gameObject);
         ui = FindObjectOfType<UIManager>();
+        levelCompleteSound = gameObject.AddComponent<AudioSource>();
         SceneManager.sceneLoaded += OnLevelLoaded;
         Messenger<Brick>.AddListener(GameEvent.BRICK_DESTROYED, OnBrickDestroyed);
         Messenger.AddListener(GameEvent.BALL_LOST, OnBallLost);
@@ -22,6 +24,7 @@ public class GameManager : MonoBehaviour
         Messenger.AddListener(GameEvent.OPTIONS_CLOSED, OnOptionsClosed);
         Messenger.AddListener(GameEvent.SCORES_CLEARED, OnScoresCleared);
         Messenger.AddListener(GameEvent.QUIT, OnQuit);
+        Messenger.AddListener(GameEvent.LIFE_POWERUP_COLLECTED, OnLifePickupCollected);
     }
 
     private void OnDestroy()
@@ -33,7 +36,12 @@ public class GameManager : MonoBehaviour
         Messenger.RemoveListener(GameEvent.OPTIONS_CLOSED, OnOptionsClosed);
         Messenger.RemoveListener(GameEvent.SCORES_CLEARED, OnScoresCleared);
         Messenger.RemoveListener(GameEvent.QUIT, OnQuit);
+        Messenger.RemoveListener(GameEvent.LIFE_POWERUP_COLLECTED, OnLifePickupCollected);
+    }
 
+    void OnLifePickupCollected()
+    {
+        ui.setLivesText(++lives);
     }
     void OnQuit()
     {
@@ -65,9 +73,13 @@ public class GameManager : MonoBehaviour
     }
     private void OnBallLost()
     {
+        
+
         ui.setLivesText(--lives);
         if (lives > 0)
         {
+            //the original ball that we have a reference to may have been one of the multiballs that was lost, so we get a new reference here.
+            ball = FindObjectOfType<Ball>();
             ball.Reset();
             paddle.Reset();
         } else
@@ -83,7 +95,7 @@ public class GameManager : MonoBehaviour
             PlayerPrefs.SetInt("highScore", score);
             ui.setHighScoreText(score);
         }
-        
+        SceneManager.LoadScene("Splash");
     }
 
     private void OnBrickDestroyed(Brick brick)
@@ -93,12 +105,13 @@ public class GameManager : MonoBehaviour
         timeSinceLastBrickBroke = 0;
         if (winConMet())
         {
+            levelCompleteSound.Play();
             score += level * 500;
-            try
+            if (level < 2)
             {
                 LoadLevel(level + 1);
-            } 
-            catch
+            }
+            else
             {
                 GameOver();
             }
@@ -148,7 +161,6 @@ public class GameManager : MonoBehaviour
     private void OnLevelLoaded(Scene scene, LoadSceneMode mode)
     {
         {
-            ball = FindObjectOfType<Ball>();
             paddle = FindObjectOfType<Paddle>();
             bricks = FindObjectsOfType<Brick>();
             CancelInvoke(nameof(enableBrickColliders));

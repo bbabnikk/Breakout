@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class Brick : MonoBehaviour
 {
-    private int health;
+    public int health { get; private set; }
     private SpriteRenderer sprite;
     [SerializeField]
     private Sprite[] states;
@@ -15,7 +15,19 @@ public class Brick : MonoBehaviour
     private void Awake()
     {
         sprite = GetComponent<SpriteRenderer>();
+        Messenger.AddListener(GameEvent.EXPLODE_POWERUP_COLLECTED, OnExplodeCollected);
     }
+
+    private void OnDestroy()
+    {
+        Messenger.RemoveListener(GameEvent.EXPLODE_POWERUP_COLLECTED, OnExplodeCollected);
+    }
+
+    private void OnExplodeCollected()
+    {
+        Invoke(nameof(hit), Vector2.Distance(this.transform.position, new Vector2(5, 0))/10);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
@@ -33,22 +45,35 @@ public class Brick : MonoBehaviour
 
     }
 
+    public void hit()
+    {
+        //quick fix for invoke notbeing able to call methods with parameters even if those parameters have a default value
+        hit(1);
+    }
+
+    public void hit(int damage)
+    {
+        if (!unbreakable)
+        {
+            health -= damage;
+            if (health <= 0)
+            {
+                gameObject.SetActive(false);
+                Messenger<Brick>.Broadcast(GameEvent.BRICK_DESTROYED, this);
+            }
+            else
+            {
+                sprite.sprite = states[health - 1];
+            }
+        }
+    }
+
     private void OnCollisionEnter2D(Collision2D collision)
     {
         Ball ball = collision.gameObject.GetComponent<Ball>();
         if (ball != null)
         {
-            if (!unbreakable) {
-                health -= ball.ballPower;
-                if (health <= 0)
-                {
-                    gameObject.SetActive(false);
-                    Messenger<Brick>.Broadcast(GameEvent.BRICK_DESTROYED, this);
-                } else
-                {
-                    sprite.sprite = states[health - 1];
-                }
-            }
+            hit(ball.ballPower);
         }
     }
 }

@@ -5,17 +5,28 @@ public class Ball : MonoBehaviour
     private Rigidbody2D rb;
     private Vector2 startPos;
     private int speed;
+    private SpriteRenderer spriteRenderer;
+    [SerializeField]private AudioSource bounceSound;
+    [SerializeField] private AudioSource ballLostSound;
     public int ballPower { get; private set; } = 1;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        spriteRenderer = GetComponent<SpriteRenderer>();
         Messenger.AddListener(GameEvent.BALL_SPEED_CHANGED, OnBallSpeedChanged);
+        Messenger.AddListener(GameEvent.POWERINCREASE_POWERUP_COLLECTED, OnpowerIncreaseCollected);
     }
 
     private void OnDestroy()
     {
         Messenger.RemoveListener(GameEvent.BALL_SPEED_CHANGED, OnBallSpeedChanged);
+        Messenger.RemoveListener(GameEvent.POWERINCREASE_POWERUP_COLLECTED, OnpowerIncreaseCollected);
+    }
+    void OnpowerIncreaseCollected()
+    {
+        ballPower = 2;
+        spriteRenderer.color = Color.red;
     }
 
     void OnBallSpeedChanged()
@@ -67,7 +78,7 @@ public class Ball : MonoBehaviour
     private void OnCollisionEnter2D(Collision2D collision)
     {
         //I really just wanted to use an extermely oval collider, but capsule collider wasn't configurable enough, circle collider had to STAY an exact circle for some god awful reason, and this was ultimately easier than making a poygon collider with a smooth transition.
-        
+        bounceSound.Play();
         Paddle paddle = collision.gameObject.GetComponent<Paddle>();
 
         if (paddle != null)
@@ -94,11 +105,17 @@ public class Ball : MonoBehaviour
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerExit2D(Collider2D collision)
     {
         if (collision.gameObject.name == "Floor")
         {
-            Messenger.Broadcast(GameEvent.BALL_LOST);
+            if (FindObjectsOfType<Ball>().Length > 1) {
+                Destroy(this.gameObject);
+            } else
+            {
+                Messenger.Broadcast(GameEvent.BALL_LOST);
+                ballLostSound.Play();
+            }
         }
     }
 }
