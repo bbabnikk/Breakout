@@ -58,8 +58,8 @@ public class Brick : MonoBehaviour
             health -= damage;
             if (health <= 0)
             {
-                gameObject.SetActive(false);
                 Messenger<Brick>.Broadcast(GameEvent.BRICK_DESTROYED, this);
+                Destroy(this.gameObject);
             }
             else
             {

@@ -122,7 +122,7 @@ public class GameManager : MonoBehaviour
     private bool winConMet()
     {
         foreach (Brick b in bricks) { 
-            if (b.gameObject.activeInHierarchy && !b.unbreakable) 
+            if (b != null) 
                 return false;
         }
         return true;
